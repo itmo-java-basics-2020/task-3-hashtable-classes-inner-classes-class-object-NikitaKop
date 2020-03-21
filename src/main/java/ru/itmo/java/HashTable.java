@@ -9,35 +9,24 @@ public class HashTable {
 
     private int size = 0;
     private int RealSize = 0;
-    private final float LoadFactor;
+    private int InitialCapacity;
+    private float LoadFactor;
     private Entry[] Dict;
     private boolean[] Deleted;
 
     public HashTable() {
-        this.LoadFactor = LOAD_FACTOR;
-        this.Dict = new Entry[INITIAL_CAPACITY];
-        this.Deleted = new boolean[INITIAL_CAPACITY];
-        for (int i = 0; i < this.Deleted.length; i++) {
-            this.Deleted[i] = false;
-        }
+        this(INITIAL_CAPACITY, LOAD_FACTOR);
     }
 
     public HashTable(int InitialCapacity) {
-        this.Dict = new Entry[InitialCapacity];
-        this.Deleted = new boolean[InitialCapacity];
-        for (int i = 0; i < this.Deleted.length; i++) {
-            this.Deleted[i] = false;
-        }
-        this.LoadFactor = LOAD_FACTOR;
+        this(InitialCapacity, LOAD_FACTOR);
     }
 
     public HashTable(int InitialCapacity, float lF) {
+        this.InitialCapacity = InitialCapacity;
         this.LoadFactor = lF;
         this.Dict = new Entry[InitialCapacity];
         this.Deleted = new boolean[InitialCapacity];
-        for (int i = 0; i < this.Deleted.length; i++) {
-            this.Deleted[i] = false;
-        }
     }
 
     private int resHash(Object key) {
@@ -68,30 +57,10 @@ public class HashTable {
         }
         size++;
         if (size > Dict.length * LoadFactor) {
-            Entry[] exDict = Dict;
-            Dict = new Entry[exDict.length * RESIZE_MULTIPLY];
-            size = 0;
-            RealSize = 0;
-            Deleted = new boolean[Dict.length];
-            for (int i = 0; i < Deleted.length; i++) {
-                Deleted[i] = false;
-            }
-            for (Entry pair : exDict) {
-                if (pair != null && pair.getKey() != null && pair.getValue() != null) {
-                    put(pair.getKey(), pair.getValue());
-                }
-            }
+            Resize(RESIZE_MULTIPLY);
         }
         if (CLEAN_FACTOR > LoadFactor && RealSize > Dict.length * CLEAN_FACTOR) {
-            Entry[] exDict = Dict;
-            Dict = new Entry[exDict.length];
-            size = 0;
-            RealSize = 0;
-            for (Entry pair : exDict) {
-                if (pair != null && pair.getKey() != null && pair.getValue() != null) {
-                    put(pair.getKey(), pair.getValue());
-                }
-            }
+            Resize(1);
         }
         return null;
     }
@@ -118,6 +87,19 @@ public class HashTable {
 
     public int size() {
         return size;
+    }
+
+    private void Resize(int ResizeMultiply) {
+        Entry[] exDict = Dict;
+        Dict = new Entry[exDict.length * ResizeMultiply];
+        size = 0;
+        RealSize = 0;
+        Deleted = new boolean[Dict.length];
+        for (Entry pair : exDict) {
+            if (pair != null && pair.getKey() != null && pair.getValue() != null) {
+                put(pair.getKey(), pair.getValue());
+            }
+        }
     }
 
     private int Searching(Object key) {
