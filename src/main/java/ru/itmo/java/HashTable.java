@@ -2,51 +2,41 @@ package ru.itmo.java;
 
 
 public class HashTable {
-    private final int INITIAL_CAPACITY = 1024;
-    private final float LOAD_FACTOR = 0.5f;
-    private final float CLEAN_FACTOR = 0.6f;
-    private final int RESIZE_MULTIPLY = 2;
-
-    private class Entry {
-
-        Object key, value;
-
-        public Entry(Object k, Object v) {
-            this.key = k;
-            this.value = v;
-        }
-    }
+    private final static int INITIAL_CAPACITY = 1024;
+    private final static float LOAD_FACTOR = 0.5f;
+    private final static float CLEAN_FACTOR = 0.6f;
+    private final static int RESIZE_MULTIPLY = 2;
 
     private int size = 0;
-    private int realSize = 0;
-    private final float loadFactor;
+    private int RealSize = 0;
+    private final float LoadFactor;
     private Entry[] Dict;
-    private Boolean[] Deleted;
+    private boolean[] Deleted;
 
     public HashTable() {
-        loadFactor = LOAD_FACTOR;
-        Dict = new Entry[INITIAL_CAPACITY];
-        Deleted = new Boolean[INITIAL_CAPACITY];
-        for (int i = 0; i < Deleted.length; i++) {
-            Deleted[i] = false;
+        this.LoadFactor = LOAD_FACTOR;
+        this.Dict = new Entry[INITIAL_CAPACITY];
+        this.Deleted = new boolean[INITIAL_CAPACITY];
+        for (int i = 0; i < this.Deleted.length; i++) {
+            this.Deleted[i] = false;
         }
     }
 
-    public HashTable(int initialCapacity) {
-        Dict = new Entry[initialCapacity];
-        Deleted = new Boolean[initialCapacity];
-        for (int i = 0; i < Deleted.length; i++) {
-            Deleted[i] = false;
+    public HashTable(int InitialCapacity) {
+        this.Dict = new Entry[InitialCapacity];
+        this.Deleted = new boolean[InitialCapacity];
+        for (int i = 0; i < this.Deleted.length; i++) {
+            this.Deleted[i] = false;
         }
-        loadFactor = LOAD_FACTOR;
+        this.LoadFactor = LOAD_FACTOR;
     }
 
-    public HashTable(int initialCapacity, float lF) {
-        this.loadFactor = lF;
-        Dict = new Entry[initialCapacity];
-        Deleted = new Boolean[initialCapacity];
-        for (int i = 0; i < Deleted.length; i++) {
-            Deleted[i] = false;
+    public HashTable(int InitialCapacity, float lF) {
+        this.LoadFactor = lF;
+        this.Dict = new Entry[InitialCapacity];
+        this.Deleted = new boolean[InitialCapacity];
+        for (int i = 0; i < this.Deleted.length; i++) {
+            this.Deleted[i] = false;
         }
     }
 
@@ -58,12 +48,12 @@ public class HashTable {
         return hash;
     }
 
-    Object put(Object key, Object value) {
+    public Object put(Object key, Object value) {
         int hash = resHash(key);
         while (Dict[hash] != null) {
-            if (key.equals(Dict[hash].key)) {
-                Object exValue = Dict[hash].value;
-                Dict[hash].value = value;
+            if (key.equals(Dict[hash].getKey())) {
+                Object exValue = Dict[hash].getValue();
+                Dict[hash].setValue(value);
                 return exValue;
             }
             hash++;
@@ -74,87 +64,112 @@ public class HashTable {
         Deleted[hash] = false;
         Dict[hash] = new Entry(key, value);
         if (!Deleted[hash]) {
-            realSize++;
+            RealSize++;
         }
         size++;
-        if (size > Dict.length * loadFactor) {
+        if (size > Dict.length * LoadFactor) {
             Entry[] exDict = Dict;
             Dict = new Entry[exDict.length * RESIZE_MULTIPLY];
             size = 0;
-            realSize = 0;
-            Deleted = new Boolean[Dict.length];
+            RealSize = 0;
+            Deleted = new boolean[Dict.length];
             for (int i = 0; i < Deleted.length; i++) {
                 Deleted[i] = false;
             }
             for (Entry pair : exDict) {
-                if (pair != null && pair.key != null && pair.value != null) {
-                    put(pair.key, pair.value);
+                if (pair != null && pair.getKey() != null && pair.getValue() != null) {
+                    put(pair.getKey(), pair.getValue());
                 }
             }
         }
-        if (CLEAN_FACTOR > loadFactor && realSize > Dict.length * CLEAN_FACTOR) {
+        if (CLEAN_FACTOR > LoadFactor && RealSize > Dict.length * CLEAN_FACTOR) {
             Entry[] exDict = Dict;
             Dict = new Entry[exDict.length];
             size = 0;
-            realSize = 0;
+            RealSize = 0;
             for (Entry pair : exDict) {
-                if (pair != null && pair.key != null && pair.value != null) {
-                    put(pair.key, pair.value);
+                if (pair != null && pair.getKey() != null && pair.getValue() != null) {
+                    put(pair.getKey(), pair.getValue());
                 }
             }
         }
         return null;
     }
 
-    Object get(Object key) {
-        int hash = resHash(key);
-        while (Dict[hash] != null || Deleted[hash]) {
-            if (Deleted[hash]) {
-                hash++;
-                if (hash == Dict.length) {
-                    hash = 0;
-                }
-                continue;
-            }
-            if (key.equals(Dict[hash].key)) {
-                return Dict[hash].value;
-            }
-            hash++;
-            if (hash == Dict.length) {
-                hash = 0;
-            }
+    public Object get(Object key) {
+        int hash = Searching(key);
+        if (hash == -1) {
+            return null;
         }
-        return null;
+        return Dict[hash].getValue();
     }
 
-    Object remove(Object key) {
-        int hash = resHash(key);
-        while (Dict[hash] != null || Deleted[hash]) {
-            if (Deleted[hash]) {
-                hash++;
-                if (hash == Dict.length) {
-                    hash = 0;
-                }
-                continue;
-            }
-            if (key.equals(Dict[hash].key)) {
-                Object exValue = Dict[hash].value;
-                Dict[hash].key = null;
-                Dict[hash].value = null;
-                Deleted[hash] = true;
-                size--;
-                return exValue;
-            }
-            hash++;
-            if (hash == Dict.length) {
-                hash = 0;
-            }
+    public Object remove(Object key) {
+        int hash = Searching(key);
+        if (hash == -1) {
+            return null;
         }
-        return null;
+        Object exValue = Dict[hash].getValue();
+        Dict[hash] = new Entry();
+        Deleted[hash] = true;
+        size--;
+        return exValue;
     }
 
-    int size() {
+    public int size() {
         return size;
+    }
+
+    private int Searching(Object key) {
+        int hash = resHash(key);
+        while (Dict[hash] != null || Deleted[hash]) {
+            if (Deleted[hash]) {
+                hash++;
+                if (hash == Dict.length) {
+                    hash = 0;
+                }
+                continue;
+            }
+            if (key.equals(Dict[hash].getKey())) {
+                return hash;
+            }
+            hash++;
+            if (hash == Dict.length) {
+                hash = 0;
+            }
+        }
+        return -1;
+    }
+
+    private class Entry {
+
+        private Object key;
+        private Object value;
+
+        public Object getKey() {
+            return key;
+        }
+
+        public void setKey(Object key) {
+            this.key = key;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public void setValue(Object value) {
+            this.value = value;
+        }
+
+        public Entry() {
+            this.key = null;
+            this.value = null;
+        }
+        public Entry(Object k, Object v) {
+            this.key = k;
+            this.value = v;
+        }
     }
 
 }
